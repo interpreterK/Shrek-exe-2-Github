@@ -39,13 +39,12 @@ local Dialog = {
 
 local Par = script.Parent
 local Torso = Par:WaitForChild("Torso")
-local SpawnPoint = Torso.CFrame
-
 local Angry = script:WaitForChild("Angry")
 local Jumpscare = script:WaitForChild("ONO")
 local Humanoid = Par:WaitForChild("Humanoid")
 local Head = Par:WaitForChild("Head")
 
+local SpawnPoint = Torso.CFrame
 local Target
 local this
 local HitDebounce = false
@@ -80,6 +79,7 @@ local function Pathfind_ChaseTarget()
 		local Ways = Path:GetWaypoints()
 		Path.Blocked:Connect(function()
 			warn("Pathway blocked for Shrek. start=", Head.Position, "goal=", Pos)
+			Humanoid:MoveTo(Pos, TT)
 		end)
 
 		if Ways.Status == Enum.PathStatus.NoPath then
@@ -245,7 +245,13 @@ Nthread(function()
 		Humanoid.HealthChanged:Wait()
 	end
 end)
---Torso:SetNetworkOwner(nil)
+
+--I mean apparently this made the pathfinding really smooth
+for _,v in next, Par:GetChildren() do
+	if v:IsA("BasePart") and not v.Anchored then
+		v:SetNetworkOwner(nil)
+	end
+end
 
 while Humanoid.Health > 0 do
 	ScanForNearestTarget()
