@@ -1,6 +1,7 @@
 --[[
 	interpreterK
 	Shrek exe 2, AI Script for the Shreks.
+	https://github.com/interpreterK/Shrek-exe-2-Github
 ]]
 
 local Pathfinding = game:GetService("PathfindingService")
@@ -11,9 +12,9 @@ local RS = game:GetService("RunService")
 
 -- AI Configuration
 local DetectRange = 100 --(Studs)
-local SearchRate = 1 --(Seconds)
+local SearchRate = .30 --(Seconds)
 local WanderRate = 1 --(Seconds)
-local DetectionDelay = 2 --(Seconds)
+local DetectionDelay = {1, 2} --(Seconds)
 local AngryWalkSpeed = 30
 local WanderWalkSpeed = 16
 local Damage = 30
@@ -21,10 +22,7 @@ local Health_Regen_Rate = 1/100
 local Health_Regen_Steps = 1
 local DamageDebounce = .10
 local CorpseRemovalDelay = Players.RespawnTime --(Seconds)
-local RespawnTime = {
-	10, --Min
-	60	--Max
-}
+local RespawnTime = {10, 60}
 local Dialog = {
 	"what are you doing in my swamp!",
 	"Ogres!",
@@ -33,7 +31,7 @@ local Dialog = {
 	"ROOOOOOOOOOOOOOOOOOOOOOOOAR!",
 	"GET OVER HERE!",
 	"DONKEY?!",
-	"LORD FARQUAAD!",
+	"FARQUAAD.",
 	"get out of my swamp!!!",
 	"this is my swamp!"
 }
@@ -51,7 +49,6 @@ local Head = Par:WaitForChild("Head")
 local Target
 local this
 local HitDebounce = false
-local Regen = false
 
 local floor = math.floor
 local random = math.random
@@ -63,6 +60,7 @@ local function Nthread(thread)
 	local bool, err = resume(create(thread))
 	if not bool then
 		warn("thread error/warning @", script:GetFullName(), ":", err)
+		print("thread trace:", debug.traceback())
 	end
 end
 
@@ -72,32 +70,45 @@ end
 
 local function Pathfind_ChaseTarget()
 	local TT = Target.Torso
+	local TH = Target.Humanoid
 	local Pos = TT.Position
-	Nthread(function()
-		if this ~= Target then
-			local Path = Pathfinding:FindPathAsync(Torso.Position, Pos)
-			local Ways = Path:GetWaypoints()
 	
-			if Ways.Status == Enum.PathStatus.NoPath then
-				warn("No pathway available for Shrek. start=", Torso.Position, "goal=", Pos)
-				Humanoid:MoveTo(Pos)
-			else
-				for i = 2, #Ways do
-					local Way = Ways[i]
-					if Way.Action == Enum.PathWaypointAction.Jump then
-						Humanoid.Jump = true
-					end
-					Humanoid:MoveTo(Way.Position)
-					Humanoid.MoveToFinished:Wait()
-				end
-				this = Target
-			end
+	if this ~= Target then
+		this = Target
+		
+		local Path = Pathfinding:FindPathAsync(Head.Position, Pos)
+		local Ways = Path:GetWaypoints()
+		Path.Blocked:Connect(function()
+			warn("Pathway blocked for Shrek. start=", Head.Position, "goal=", Pos)
+		end)
+
+		if Ways.Status == Enum.PathStatus.NoPath then
+			warn("No pathway available for Shrek. start=", Head.Position, "goal=", Pos)
+			Humanoid:MoveTo(Pos, TT)
 		else
-			--Cut the pathfinding and focus entirely on chasing the player as much as the ai can
-			--print("Absolute following")
-			Humanoid:MoveTo(Pos)
+			for i = 1, #Ways do
+				if TH.Health < 1 then
+					--Target died
+					break
+				end
+				local Way = Ways[i]
+				if Way.Action == Enum.PathWaypointAction.Jump then
+					Humanoid.Jump = true
+				end
+				Humanoid:MoveTo(Way.Position)
+				if i == #Ways then
+					--Stop getting stuck on your own intelligence shrek!!
+					Humanoid:MoveTo(Pos, TT)
+					break
+				end
+				Humanoid.MoveToFinished:Wait()
+			end
 		end
-	end)
+	else
+		--Cut the pathfinding and focus entirely on chasing the player as much as the ai can
+		--print("Absolute following")
+		Humanoid:MoveTo(Pos, TT)
+	end
 end
 
 local function ScanForNearestTarget()
@@ -120,19 +131,23 @@ local function ScanForNearestTarget()
 					Target = nil
 				end
 				break --Break after finding a player or lets not nest or tie up detecting players
+			else
+				Target = nil
 			end
 		end
 	end
 end
 
 local function AngryMode()
-	wait(DetectionDelay)
+	wait(pseudorandom(unpack(DetectionDelay)))
 
 	ChatService:Chat(Head, Dialog[random(1, #Dialog)])
 	Nthread(function()
 		while Angry.Value do
-			ChatService:Chat(Head, Dialog[random(1, #Dialog)])
 			wait(pseudorandom(10, 60))
+			if Target then
+				ChatService:Chat(Head, Dialog[random(1, #Dialog)])
+			end
 		end
 	end)
 	while Angry.Value do
@@ -155,9 +170,11 @@ local function WanderMode()
 		Humanoid.WalkSpeed = WanderWalkSpeed
 		if not Wandering then
 			wait(pseudorandom(2, 6)) --Count down to start wandering around
-			Humanoid:MoveTo(Vector3.new(pseudorandom(-280, 280), 0, pseudorandom(-280, 280)), workspace.Terrain)
-			Wandering = true
-			wait(pseudorandom(2, 12)) --Count down to stop wandering around
+			if not Angry.Value then
+				Humanoid:MoveTo(Vector3.new(pseudorandom(-280, 280), 0, pseudorandom(-280, 280)), workspace.Terrain)
+				Wandering = true
+				wait(pseudorandom(2, 12)) --Count down to stop wandering around
+			end
 			Wandering = false
 		end
 		wait(WanderRate)
@@ -173,7 +190,7 @@ end
 
 local function HitAttack(Touch)
 	if not HitDebounce then
-		local TouchHum = Touch.Parent:FindFirstChild("Humanoid")
+		local TouchHum = Angry.Value and Touch.Parent:FindFirstChild("Humanoid")
 		if TouchHum then
 			local nand = (not Touch.Parent:IsDescendantOf(workspace.Npc)) and Humanoid.Health > 1
 			if nand then
