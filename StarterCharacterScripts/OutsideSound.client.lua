@@ -32,7 +32,7 @@ local function PlayAmbient()
 end
 
 local function StopAmbient()
-	TS:Create(Sandstorm, TweenInfo.new(2), {Volume = 0}):Play()
+	TS:Create(Sandstorm, TweenInfo.new(1), {Volume = 0}):Play()
 end
 
 Outside:GetPropertyChangedSignal("Value"):Connect(function()

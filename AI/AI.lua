@@ -6,23 +6,26 @@
 
 local Pathfinding = game:GetService("PathfindingService")
 local ChatService = game:GetService("Chat")
-local Storage = game:GetService("ServerStorage")
 local Players = game:GetService("Players")
 local RS = game:GetService("RunService")
+
+local floor = math.floor
+local random = math.random
+local min = math.min
+local resume = coroutine.resume
+local create = coroutine.create
 
 -- AI Configuration
 local DetectRange = 100 --(Studs)
 local SearchRate = .30 --(Seconds)
 local WanderRate = 1 --(Seconds)
-local DetectionDelay = {1, 2} --(Seconds)
+local DetectionDelay = {0, 3} --(Seconds)
 local AngryWalkSpeed = 30
 local WanderWalkSpeed = 16
 local Damage = 30
 local Health_Regen_Rate = 1/100
 local Health_Regen_Steps = 1
-local DamageDebounce = .10
-local CorpseRemovalDelay = Players.RespawnTime --(Seconds)
-local RespawnTime = {10, 60}
+local DamageDebounce = .30
 local Dialog = {
 	"what are you doing in my swamp!",
 	"Ogres!",
@@ -44,16 +47,9 @@ local Jumpscare = script:WaitForChild("ONO")
 local Humanoid = Par:WaitForChild("Humanoid")
 local Head = Par:WaitForChild("Head")
 
-local SpawnPoint = Torso.CFrame
 local Target
 local this
 local HitDebounce = false
-
-local floor = math.floor
-local random = math.random
-local min = math.min
-local resume = coroutine.resume
-local create = coroutine.create
 
 local function Nthread(thread)
 	local bool, err = resume(create(thread))
@@ -214,15 +210,6 @@ Torso.Touched:Connect(HitAttack)
 
 Humanoid.Died:Connect(function()
 	Angry.Value = false
-	wait(CorpseRemovalDelay)
-	script.Parent.Parent = Storage --Send the model to a place where its not visible for the time being
-
-	local SpawningShrek = Storage.Npc.Shrek:Clone()
-	SpawningShrek:WaitForChild("Torso").CFrame = SpawnPoint
-	wait(pseudorandom(unpack(RespawnTime)))
-
-	SpawningShrek.Parent = workspace.Npc
-	script.Parent:Destroy() --Clean up garbage
 end)
 
 Angry:GetPropertyChangedSignal("Value"):Connect(function()
