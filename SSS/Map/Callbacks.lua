@@ -6,14 +6,16 @@
 
 local Callbacks = {
 	ReadyDelay = 1, --(Seconds)
-	CactusDebounce = .30 --(Seconds)
+	CactusDebounce = .30, --(Seconds)
+	ToxicDebounce = .1 --(Seconds)
 }
 Callbacks.__index = Callbacks
 
 local TS = game:GetService("TweenService")
 
-local BaseType = TweenInfo.new(1, Enum.EasingStyle.Linear)
+local BaseType = TweenInfo.new(1.5, Enum.EasingStyle.Linear)
 local CactusHitDebounce = false
+local ToxicHitDebounce = false
 
 function Callbacks:CarMove_Down(Player, Object, Clicker)
 	local Button = Clicker.Parent
@@ -94,7 +96,14 @@ function Callbacks:SlideDoor_Open(Player, Object, Clicker)
 		Button.Press:Play()
 		Door.Creak:Play()
 
-		local Tween = TS:Create(Door, BaseType, {Position = Door.Position + Vector3.new(0, 0, 7.5)})
+		local Tween
+		if Door.CFrame.LookVector.Z == 1 then
+			Tween = TS:Create(Door, BaseType, {Position = Door.Position + Vector3.new(0, 0, -7.5)})
+		elseif Door.CFrame.LookVector.X == -1 then
+			Tween = TS:Create(Door, BaseType, {Position = Door.Position + Vector3.new(7.5, 0, 0)})
+		else
+			Tween = TS:Create(Door, BaseType, {Position = Door.Position + Vector3.new(0, 0, 7.5)})
+		end
 		Tween:Play()
 		Tween.Completed:Wait()
 
@@ -120,7 +129,14 @@ function Callbacks:SlideDoor_Close(Player, Object, Clicker)
 		Button.Press:Play()
 		Door.Creak2:Play()
 
-		local Tween = TS:Create(Door, BaseType, {Position = Door.Position + Vector3.new(0, 0, -7.5)})
+		local Tween
+		if Door.CFrame.LookVector.Z == 1 then
+			Tween = TS:Create(Door, BaseType, {Position = Door.Position + Vector3.new(0, 0, 7.5)})
+		elseif Door.CFrame.LookVector.X == -1 then
+			Tween = TS:Create(Door, BaseType, {Position = Door.Position + Vector3.new(-7.5, 0, 0)})
+		else
+			Tween = TS:Create(Door, BaseType, {Position = Door.Position + Vector3.new(0, 0, -7.5)})
+		end
 		Tween:Play()
 		Tween.Completed:Wait()
 
@@ -250,6 +266,59 @@ function Callbacks:GateDoor_Close(Player, Object, Clicker)
 	end
 end
 
+
+function Callbacks:GiantDoor_Open(Player, Object, Clicker)
+	local Door = Clicker.Parent.Parent.Door
+	local Button = Clicker.Parent
+
+	if not Door.open.Value and not Door.opening.Value then
+		Door.open.Value = true
+		Door.opening.Value = true
+		Button.Material = Enum.Material.Neon
+		Button.Press:Play()
+		Door.Creak:Play()
+
+		local Tween = TS:Create(Door, BaseType, {Position = Door.Position + Vector3.new(0, 20, 0)})
+		Tween:Play()
+		Tween.Completed:Wait()
+
+		Door.Creak:Stop()
+		Door.Slam:Play()
+		wait(self.ReadyDelay)
+
+		Button.Recharge:Play()
+		Button.Material = Enum.Material.Glass
+		Door.opening.Value = false
+	end
+end
+
+function Callbacks:GiantDoor_Close(Player, Object, Clicker)
+	local Door = Clicker.Parent.Parent.Door
+	local Button = Clicker.Parent
+	local Smoke = Door.Parent.Smoke
+
+	if Door.open.Value and not Door.opening.Value then
+		Door.open.Value = false
+		Door.opening.Value = true
+		Button.Material = Enum.Material.Neon
+		Button.Press:Play()
+		Door.Creak:Play()
+
+		local Tween = TS:Create(Door, BaseType, {Position = Door.Position - Vector3.new(0, 20, 0)})
+		Tween:Play()
+		Tween.Completed:Wait()
+
+		Door.Creak:Stop()
+		Door.Slam:Play()
+		Smoke.Hit:Emit(500)
+		wait(self.ReadyDelay)
+
+		Button.Recharge:Play()
+		Button.Material = Enum.Material.Glass
+		Door.opening.Value = false
+	end
+end
+
 function Callbacks:CactusTouch(Touch)
 	local Humanoid = Touch.Parent:FindFirstChild("Humanoid")
 	if Humanoid and not CactusHitDebounce then
@@ -257,6 +326,18 @@ function Callbacks:CactusTouch(Touch)
 		CactusHitDebounce = true
 		wait(self.CactusDebounce)
 		CactusHitDebounce = false
+	end
+end
+
+function Callbacks:ToxicTouch(Touch)
+	local Humanoid = Touch.Parent:FindFirstChild("Humanoid")
+	if Humanoid and not ToxicHitDebounce then
+		Touch.Color = Color3.new(0, 1, 0)
+		Touch.Material = Enum.Material.Neon
+		Humanoid:TakeDamage(50)
+		ToxicHitDebounce = true
+		wait(self.ToxicDebounce)
+		ToxicHitDebounce = false
 	end
 end
 

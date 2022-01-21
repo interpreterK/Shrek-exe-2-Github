@@ -61,10 +61,28 @@ local Assignments = {
             Callbacks:GateDoor_Close(...)
         end
     },
+    ["GiantDoor"] = {
+        BindClicks = {
+            [1] = {"Open"},
+            [2] = {"Close"}
+        },
+        Callback = function(...)
+            Callbacks:GiantDoor_Open(...)
+        end,
+        Callback2 = function(...)
+            Callbacks:GiantDoor_Close(...)
+        end
+    },
     ["Cacti"] = {
         Touches = {"Union"},
         Callback = function(...)
             Callbacks:CactusTouch(...)
+        end
+    },
+    ["Toxic"] = {
+        Touches = {"Toxic"},
+        Callback = function(...)
+            Callbacks:ToxicTouch(...)
         end
     }
 }
@@ -86,11 +104,9 @@ local function BindClick(Inst, FoundInst, Opt, Area, Alt)
 end
 
 local function TouchHit(Inst, TouchName, Opt)
-    local Hitable = Inst.Name == TouchName and Inst.CanTouch
+    local Hitable = Inst:IsA("BasePart") and Inst.Name == TouchName and Inst.CanTouch
     if Hitable then
-        if Inst.Parent.Name == "Cacti" then
-            Inst.Touched:Connect(Opt.Callback)
-        end
+        Inst.Touched:Connect(Opt.Callback)
     end
 end
 

@@ -26,9 +26,10 @@ local function pseudorandom(min, max)
 end
 
 Humanoid.Died:Connect(function()
+	local Shrek = script.Parent
     wait(CorpseRemovalDelay)
-	script.Parent.Parent = nil --Send the model to a place where its not visible for the time being
+	Shrek.Parent = nil --Send the model to a place where its not visible for the time being
 	wait(pseudorandom(unpack(RespawnTime)))
 	RespawnShrek.Parent = workspace.Npc
-	script.Parent:Destroy() --Clean up garbage
+	Shrek:Destroy() --Clean up garbage
 end)
