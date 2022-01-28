@@ -6,8 +6,8 @@
 
 local Character = script.Parent
 local Arms = {
-    Character:WaitForChild("RightArm"),
-    Character:WaitForChild("LeftArm")
+    Character:WaitForChild("Right Arm"),
+    Character:WaitForChild("Left Arm")
 }
 
 for i = 1, #Arms do
