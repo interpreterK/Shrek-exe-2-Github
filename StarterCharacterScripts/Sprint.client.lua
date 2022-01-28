@@ -16,7 +16,7 @@ local Time = TweenInfo.new(0.30)
 
 local function Sprint()
 	TS:Create(Humanoid, Time, {WalkSpeed = WS + 14}):Play()
-	TS:Create(CC, Time, {FieldOfView = FOV + 12}):Play()
+	TS:Create(CC, Time, {FieldOfView = FOV + 9}):Play()
 end
 
 local function Walk()
